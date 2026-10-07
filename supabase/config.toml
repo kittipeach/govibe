@@ -1,0 +1,8 @@
+# Minimal config so `supabase functions deploy` works from this repo.
+project_id = "fkrqjpowuykzdnxypsqs"
+
+[functions.ai-recommend]
+verify_jwt = true
+
+[functions.parse-booking]
+verify_jwt = true
