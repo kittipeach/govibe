@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { listExpenses, addExpense, deleteExpense, updateTrip, fmtMoney } from '@/lib/db';
 import type { Day, Expense, ExpenseCategory, Stop, Trip } from '@/lib/types';
 import { CATEGORY_LABEL } from '@/lib/types';
+import { TrashIcon } from '@/components/icons';
 
 interface Props {
   trip: Trip;
@@ -37,15 +38,14 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
   }, [expenses, stops]);
 
   return (
-    <div className="grid grid-2">
-      <div className="stack">
+    <div className="grid gap-5 lg:grid-cols-2">
+      <div className="flex flex-col gap-5">
         <div className="card">
-          <div className="row">
-            <h3 style={{ margin: 0 }}>Budget</h3>
-            <span className="spacer" />
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-xl font-bold">Budget</h3>
+            <span className="flex-1" />
             <input
-              className="input"
-              style={{ width: 140 }}
+              className="input w-36"
               type="number"
               defaultValue={trip.budget_total ?? ''}
               placeholder="total"
@@ -57,23 +57,23 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
                 }
               }}
             />
-            <span className="muted small">{trip.currency}</span>
+            <span className="text-xs text-muted">{trip.currency}</span>
           </div>
           <Stat label="Planned" v={planned} cur={trip.currency} sub={toHome(planned)} />
           <Stat label="Spent so far" v={actual} cur={trip.currency} sub={toHome(actual)} />
           <Stat label="Remaining vs budget" v={budget - Math.max(planned, actual)} cur={trip.currency} sub={budget ? `${Math.round((Math.max(planned, actual) / budget) * 100)}% used` : 'set a budget'} />
           {budget > 0 && (
-            <div className="bar" style={{ marginTop: '.6rem' }}>
+            <div className="bar mt-3">
               <span style={{ width: `${Math.min(100, (Math.max(planned, actual) / budget) * 100)}%` }} />
             </div>
           )}
-          <p className="muted small" style={{ marginTop: '.6rem', marginBottom: 0 }}>
+          <p className="mt-3 text-xs text-muted">
             FX 1 {trip.currency} = {trip.fx_rate} {trip.home_currency} · {trip.travellers} travellers → {fmtMoney((Math.max(planned, actual) * trip.fx_rate) / trip.travellers, trip.home_currency)} per person
           </p>
         </div>
 
         <div className="card">
-          <h3>By category</h3>
+          <h3 className="font-display text-xl font-bold">By category</h3>
           <table className="tbl">
             <thead>
               <tr>
@@ -92,15 +92,15 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
               ))}
             </tbody>
           </table>
-          <p className="muted small" style={{ marginTop: '.5rem', marginBottom: 0 }}>
+          <p className="mt-2 text-xs text-muted">
             Planned includes costs on itinerary stops and uploaded bookings.
           </p>
         </div>
       </div>
 
-      <div className="stack">
+      <div className="flex flex-col gap-5">
         <form
-          className="card stack"
+          className="card flex flex-col gap-3"
           onSubmit={async (e) => {
             e.preventDefault();
             try {
@@ -112,10 +112,10 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
             }
           }}
         >
-          <h3>Add expense</h3>
+          <h3 className="font-display text-xl font-bold">Add expense</h3>
           <div className="form-grid">
             <div className="field">
-              <label>Category</label>
+              <label className="label">Category</label>
               <select className="input" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value as ExpenseCategory })}>
                 {Object.entries(CATEGORY_LABEL).map(([k, l]) => (
                   <option key={k} value={k}>
@@ -125,15 +125,15 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
               </select>
             </div>
             <div className="field">
-              <label>Amount ({trip.currency})</label>
+              <label className="label">Amount ({trip.currency})</label>
               <input className="input" type="number" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
             </div>
-            <div className="field" style={{ gridColumn: '1 / -1' }}>
-              <label>What</label>
+            <div className="field sm:col-span-2 lg:col-span-3">
+              <label className="label">What</label>
               <input className="input" required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Hoto dinner · Kawaguchiko" />
             </div>
             <div className="field">
-              <label>Day</label>
+              <label className="label">Day</label>
               <select className="input" value={f.day_id} onChange={(e) => setF({ ...f, day_id: e.target.value })}>
                 <option value="">—</option>
                 {days.map((d) => (
@@ -144,43 +144,44 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
               </select>
             </div>
             <div className="field">
-              <label>Kind</label>
+              <label className="label">Kind</label>
               <select className="input" value={f.planned ? 'planned' : 'actual'} onChange={(e) => setF({ ...f, planned: e.target.value === 'planned' })}>
                 <option value="actual">Actual spend</option>
                 <option value="planned">Planned / budget line</option>
               </select>
             </div>
           </div>
-          <div className="row">
-            <button className="btn primary sm">Add</button>
+          <div>
+            <button className="btn-primary btn-sm">Add</button>
           </div>
-          {err && <div className="alert error">{err}</div>}
+          {err && <div className="alert-error">{err}</div>}
         </form>
 
         <div className="card">
-          <h3>Entries ({expenses.length})</h3>
-          {expenses.length === 0 && <p className="muted small">No expenses yet.</p>}
+          <h3 className="font-display text-xl font-bold">Entries ({expenses.length})</h3>
+          {expenses.length === 0 && <p className="text-sm text-muted">No expenses yet.</p>}
           <table className="tbl">
             <tbody>
               {expenses.map((e) => (
                 <tr key={e.id}>
                   <td>
                     {e.title}
-                    <div className="muted small">
+                    <div className="text-xs text-muted">
                       {CATEGORY_LABEL[e.category]} · {e.planned ? 'planned' : 'actual'}
                       {e.day_id && <> · {days.find((d) => d.id === e.day_id)?.title}</>}
                     </div>
                   </td>
                   <td className="num">{fmtMoney(e.amount, trip.currency)}</td>
-                  <td style={{ width: 30 }}>
+                  <td className="w-8">
                     <button
                       className="icon-btn"
+                      aria-label="Delete expense"
                       onClick={async () => {
                         await deleteExpense(e.id);
                         load();
                       }}
                     >
-                      🗑
+                      <TrashIcon size={14} />
                     </button>
                   </td>
                 </tr>
@@ -195,11 +196,11 @@ export default function Budget({ trip, days, stops, onChange }: Props) {
 
 function Stat({ label, v, cur, sub }: { label: string; v: number; cur: string; sub?: string }) {
   return (
-    <div className="row" style={{ justifyContent: 'space-between', padding: '.45rem 0', borderBottom: '1px solid var(--line)' }}>
-      <span className="muted small">{label}</span>
-      <span style={{ textAlign: 'right' }}>
-        <strong>{fmtMoney(v, cur)}</strong>
-        {sub && <div className="muted small">{sub}</div>}
+    <div className="flex items-center justify-between border-b border-line2 py-2">
+      <span className="text-xs text-muted">{label}</span>
+      <span className="text-right">
+        <strong className="font-display text-lg">{fmtMoney(v, cur)}</strong>
+        {sub && <div className="text-xs text-muted">{sub}</div>}
       </span>
     </div>
   );

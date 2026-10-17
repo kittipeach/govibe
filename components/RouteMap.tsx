@@ -2,12 +2,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { loadMaps, MAPS_KEY, routePath, cumulative, pointAt, travellerSvg, kindPin } from '@/lib/maps';
 import type { Stop, TravelMode, Day } from '@/lib/types';
+import { updateDay } from '@/lib/db';
+import { PlayIcon, PauseIcon, RestartIcon } from '@/components/icons';
 
 interface Props {
   day: Day | null;
   stops: Stop[]; // stops for this day, in order, with lat/lng
   allStops?: Stop[]; // optional: every pinned stop (shown faintly)
   onPickLocation?: (loc: { lat: number; lng: number; name: string; address?: string; place_id?: string }) => void;
+  onDayChange?: () => void;
 }
 
 /**
@@ -16,7 +19,7 @@ interface Props {
  * - Play / pause / speed / scrub controls animate a walking or driving figure along the polyline.
  * - Clicking the map (or a Places search result) can hand a location back to the parent for pinning.
  */
-export default function RouteMap({ day, stops, allStops = [], onPickLocation }: Props) {
+export default function RouteMap({ day, stops, allStops = [], onPickLocation, onDayChange }: Props) {
   const mapEl = useRef<HTMLDivElement>(null);
   const searchEl = useRef<HTMLInputElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -125,7 +128,7 @@ export default function RouteMap({ day, stops, allStops = [], onPickLocation }: 
       .filter((s) => s.lat != null && !ids.has(s.id))
       .forEach((s) => {
         markersRef.current.push(
-          new g.maps.Marker({ map, position: { lat: s.lat!, lng: s.lng! }, title: s.name, opacity: 0.35, icon: { url: kindPin('·', '#9aa3b2'), scaledSize: new g.maps.Size(22, 28) } }),
+          new g.maps.Marker({ map, position: { lat: s.lat!, lng: s.lng! }, title: s.name, opacity: 0.35, icon: { url: kindPin('·', '#C9C2B2'), scaledSize: new g.maps.Size(22, 28) } }),
         );
       });
 
@@ -149,7 +152,7 @@ export default function RouteMap({ day, stops, allStops = [], onPickLocation }: 
     svc
       .route({ origin, destination, waypoints, travelMode: g.maps.TravelMode[mode] })
       .then((res) => {
-        const renderer = new g.maps.DirectionsRenderer({ map, directions: res, suppressMarkers: true, preserveViewport: true, polylineOptions: { strokeColor: mode === 'WALKING' ? '#5ee1c3' : '#ff8c6b', strokeWeight: 5, strokeOpacity: 0.85 } });
+        const renderer = new g.maps.DirectionsRenderer({ map, directions: res, suppressMarkers: true, preserveViewport: true, polylineOptions: { strokeColor: '#C4552D', strokeWeight: 5, strokeOpacity: 0.85 } });
         rendererRef.current = renderer;
         const path = routePath(res);
         pathRef.current = path;
@@ -166,7 +169,7 @@ export default function RouteMap({ day, stops, allStops = [], onPickLocation }: 
         // Fallback: straight polyline (e.g. TRANSIT not available between points)
         setRouteErr(`Directions unavailable (${e.message}). Showing straight lines.`);
         const path = pts.map((s) => new g.maps.LatLng(s.lat!, s.lng!));
-        polyRef.current = new g.maps.Polyline({ map, path, strokeColor: '#9aa3b2', strokeWeight: 3, strokeOpacity: 0.8, icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '14px' }] });
+        polyRef.current = new g.maps.Polyline({ map, path, strokeColor: '#6B716C', strokeWeight: 3, strokeOpacity: 0.8, icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '14px' }] });
         pathRef.current = path;
         cumRef.current = cumulative(path);
         travellerRef.current = new g.maps.Marker({ map, position: path[0], icon: { url: travellerSvg(mode, 0), scaledSize: new g.maps.Size(48, 48), anchor: new g.maps.Point(24, 24) }, zIndex: 999 });
@@ -236,12 +239,10 @@ export default function RouteMap({ day, stops, allStops = [], onPickLocation }: 
     return (
       <div className="map-wrap">
         <div className="map-empty">
-          <div>
-            <div style={{ fontSize: '2rem' }}>🗺️</div>
-            <strong>Google Maps key missing</strong>
-            <p className="small">
-              Set <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> (Maps JavaScript, Places, Directions, Geocoding enabled) to see the route and the
-              animated traveller.
+          <div className="max-w-sm">
+            <div className="font-display text-xl font-bold text-ink">Google Maps key missing</div>
+            <p className="mt-1 text-sm">
+              Set <code className="rounded bg-sand px-1">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> (Maps JavaScript, Places, Directions, Geocoding enabled) to see the route and the animated traveller.
             </p>
           </div>
         </div>
@@ -252,40 +253,73 @@ export default function RouteMap({ day, stops, allStops = [], onPickLocation }: 
   const elapsedMins = routeInfo ? Math.round(routeInfo.mins * frac) : 0;
   const hasRoute = pathRef.current.length > 1;
 
+  const MODES: [TravelMode, string][] = [
+    ['DRIVING', 'Drive'],
+    ['WALKING', 'Walk'],
+    ['TRANSIT', 'Transit'],
+    ['BICYCLING', 'Bike'],
+  ];
+  const modeEmoji = mode === 'WALKING' ? '🚶' : mode === 'DRIVING' ? '🚗' : mode === 'TRANSIT' ? '🚆' : '🚲';
+
   return (
-    <div className="stack">
-      {onPickLocation && (
-        <input ref={searchEl} className="input" placeholder="🔍 Search a place to pin (Google Places) — or click anywhere on the map" />
-      )}
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
+        {onPickLocation && (
+          <>
+            <label htmlFor="placeSearch" className="sr-only">
+              Search a place
+            </label>
+            <input id="placeSearch" ref={searchEl} className="input min-w-[220px] flex-1 rounded-pill px-4" placeholder="Search a place to pin — or click the map" />
+          </>
+        )}
+        {day && (
+          <div className="flex overflow-hidden rounded-pill border border-line bg-paper" role="group" aria-label="Travel mode">
+            {MODES.map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                className={`px-3.5 py-2 text-xs font-bold transition ${mode === m ? 'bg-forest text-ground' : 'text-ink hover:bg-ground'}`}
+                onClick={async () => {
+                  if (m === mode) return;
+                  await updateDay(day.id, { travel_mode: m });
+                  onDayChange?.();
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="map-wrap">
         <div ref={mapEl} className="map" />
-        {err && <div className="alert error" style={{ position: 'absolute', top: 10, left: 10 }}>{err}</div>}
-        {routeErr && <div className="alert" style={{ position: 'absolute', top: 10, left: 10, right: 10, fontSize: '.8rem' }}>{routeErr}</div>}
+        {err && <div className="alert-error absolute left-3 top-3">{err}</div>}
+        {routeErr && <div className="alert absolute left-3 right-3 top-3 text-xs">{routeErr}</div>}
         {hasRoute && (
           <div className="player">
-            <button className="btn sm" onClick={() => setPlaying((p) => !p)} title={playing ? 'Pause' : 'Play'}>
-              {playing ? '⏸' : '▶'}
+            <button className="flex h-11 w-11 items-center justify-center rounded-full bg-forest text-ground" onClick={() => setPlaying((p) => !p)} aria-label={playing ? 'Pause' : 'Play'}>
+              {playing ? <PauseIcon /> : <PlayIcon />}
             </button>
-            <button className="btn sm" onClick={stop} title="Restart">
-              ⏮
+            <button className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink" onClick={stop} aria-label="Restart">
+              <RestartIcon />
             </button>
-            <input type="range" min={0} max={1} step={0.001} value={frac} onChange={(e) => scrub(Number(e.target.value))} />
-            <select className="input" style={{ width: 'auto', padding: '.3rem .4rem' }} value={speed} onChange={(e) => setSpeed(Number(e.target.value))}>
+            <input type="range" min={0} max={1} step={0.001} value={frac} onChange={(e) => scrub(Number(e.target.value))} className="w-28 accent-clay sm:w-40" aria-label="Route progress" />
+            <select className="rounded-pill border border-line bg-paper px-2 py-1 text-xs" value={speed} onChange={(e) => setSpeed(Number(e.target.value))} aria-label="Playback speed">
               {[0.5, 1, 2, 4].map((s) => (
                 <option key={s} value={s}>
                   {s}×
                 </option>
               ))}
             </select>
-            <span className="time muted">
-              {mode === 'WALKING' ? '🚶' : mode === 'DRIVING' ? '🚗' : mode === 'TRANSIT' ? '🚆' : '🚲'} {routeInfo ? `${elapsedMins}/${Math.round(routeInfo.mins)} min` : '—'}
+            <span className="min-w-[5.5rem] text-center text-xs font-bold tabular-nums">
+              {modeEmoji} {routeInfo ? `${elapsedMins} / ${Math.round(routeInfo.mins)} min` : '—'}
             </span>
           </div>
         )}
       </div>
       {routeInfo && (
-        <p className="muted small" style={{ margin: 0 }}>
-          Route: {routeInfo.km.toFixed(1)} km · ~{Math.round(routeInfo.mins)} min by {mode.toLowerCase()} · {stops.filter((s) => s.lat != null).length} stops
+        <p className="text-xs text-muted">
+          Route {routeInfo.km.toFixed(1)} km · ~{Math.round(routeInfo.mins)} min by {mode.toLowerCase()} · {stops.filter((s) => s.lat != null).length} stops pinned
         </p>
       )}
     </div>

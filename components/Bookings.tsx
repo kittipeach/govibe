@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { callFunction } from '@/lib/supabase';
 import { listBookings, uploadBookingFile, addBooking, deleteBooking, addStops, signedBookingUrl, addExpense } from '@/lib/db';
 import type { Booking, BookingType, Day, Stop, Trip } from '@/lib/types';
+import { FileIcon, TrashIcon, TicketIcon } from '@/components/icons';
 
 interface Props {
   trip: Trip;
@@ -138,9 +139,9 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
   }
 
   return (
-    <div className="stack">
+    <div className="flex flex-col gap-4">
       <div
-        className={`dropzone ${over ? 'over' : ''}`}
+        className={`dropzone ${over ? 'dropzone-over' : ''}`}
         onDragOver={(e) => {
           e.preventDefault();
           setOver(true);
@@ -155,23 +156,23 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
         onClick={() => document.getElementById('bookingFile')?.click()}
       >
         <input id="bookingFile" type="file" accept=".pdf,image/*" hidden onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-        <div style={{ fontSize: '2rem' }}>🎫</div>
-        <strong>Drop a flight ticket, hotel confirmation or train/bus booking</strong>
-        <p className="muted small" style={{ margin: '.3rem 0 0' }}>
+        <TicketIcon size={36} className="mx-auto mb-2 text-forest" />
+        <strong className="font-display text-lg">Drop a flight ticket, hotel confirmation or train/bus booking</strong>
+        <p className="mx-auto mt-1 max-w-xl text-sm text-muted">
           PDF or image. GoVibe reads it, pins the airports / hotel on the right days, and adds the cost to your budget.
           <span className="th">วางไฟล์ตั๋วเครื่องบิน / ใบจองโรงแรม (PDF หรือรูป) ระบบจะอ่านข้อมูล ปักหมุดสนามบิน/โรงแรมลงวันที่ถูกต้อง และใส่ค่าใช้จ่ายเข้างบให้</span>
         </p>
         {busy && (
-          <p className="small" style={{ marginTop: '.6rem' }}>
+          <p className="mt-3 text-sm text-forest">
             <span className="spinner" /> {busy}
           </p>
         )}
       </div>
-      {err && <div className="alert error">{err}</div>}
+      {err && <div className="alert-error">{err}</div>}
 
       {preview && (
-        <div className="card stack">
-          <h3>Check what we read from “{preview.file.name}”</h3>
+        <div className="card flex flex-col gap-4 border-forest-line">
+          <h3 className="font-display text-xl font-bold">Check what we read from “{preview.file.name}”</h3>
           <div className="form-grid">
             <Field label="Type" v={preview.parsed.type} />
             <Field label="Title" v={preview.parsed.title} />
@@ -183,9 +184,9 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
             <Field label="End" v={preview.parsed.end_at} />
             <Field label="Cost" v={preview.parsed.cost != null ? `${preview.parsed.cost} ${preview.parsed.currency ?? ''}` : undefined} />
           </div>
-          {preview.parsed.summary && <p className="small muted">{preview.parsed.summary}</p>}
-          <div className="row">
-            <button className="btn primary" onClick={confirmPreview} disabled={!!busy}>
+          {preview.parsed.summary && <p className="text-sm text-ink2">{preview.parsed.summary}</p>}
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-primary" onClick={confirmPreview} disabled={!!busy}>
               Looks right — save & auto-pin
             </button>
             <button className="btn" onClick={() => setPreview(null)}>
@@ -195,15 +196,15 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
         </div>
       )}
 
-      <div className="card">
-        <h3>Bookings ({bookings.length})</h3>
-        {bookings.length === 0 && <p className="muted small">Nothing uploaded yet.</p>}
+      <div className="card flex flex-col gap-2">
+        <h3 className="font-display text-xl font-bold">Bookings ({bookings.length})</h3>
+        {bookings.length === 0 && <p className="text-sm text-muted">Nothing uploaded yet.</p>}
         {bookings.map((b) => (
           <div className="stop" key={b.id}>
-            <div className="icon">{b.type === 'flight' ? '✈️' : b.type === 'hotel' ? '🏨' : '🎫'}</div>
+            <div className="timebox bg-clay text-base">{b.type === 'flight' ? '✈' : b.type === 'hotel' ? '🏨' : '🎫'}</div>
             <div>
-              <div className="name">{b.title}</div>
-              <div className="meta">
+              <div className="text-[15px] font-bold">{b.title}</div>
+              <div className="text-xs text-muted">
                 {b.provider && <>{b.provider} · </>}
                 {b.reference && <>Ref {b.reference} · </>}
                 {b.start_at && <>{b.start_at.replace('T', ' ').slice(0, 16)}</>}
@@ -211,15 +212,16 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
                 {b.cost != null && <> · {b.cost} {b.currency}</>}
               </div>
             </div>
-            <div className="row" style={{ gap: '.1rem' }}>
+            <div className="flex items-center">
               {b.file_path && (
-                <button className="icon-btn" title="Open file" onClick={async () => window.open(await signedBookingUrl(b.file_path!), '_blank')}>
-                  📄
+                <button className="icon-btn" title="Open file" aria-label="Open file" onClick={async () => window.open(await signedBookingUrl(b.file_path!), '_blank')}>
+                  <FileIcon size={15} />
                 </button>
               )}
               <button
                 className="icon-btn"
                 title="Delete booking (and its auto-pinned stops)"
+                aria-label="Delete booking"
                 onClick={async () => {
                   if (confirm('Delete this booking and the stops it created?')) {
                     await deleteBooking(b.id);
@@ -228,7 +230,7 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
                   }
                 }}
               >
-                🗑
+                <TrashIcon size={15} />
               </button>
             </div>
           </div>
@@ -241,9 +243,9 @@ export default function Bookings({ trip, days, stops, onChange }: Props) {
 function Field({ label, v }: { label: string; v?: string | number | null }) {
   return (
     <div className="field">
-      <label>{label}</label>
-      <div className="input" style={{ background: 'transparent' }}>
-        {v ?? <span className="muted">—</span>}
+      <span className="label">{label}</span>
+      <div className="input bg-ground">
+        {v ?? <span className="text-muted">—</span>}
       </div>
     </div>
   );

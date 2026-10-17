@@ -42,19 +42,20 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: '3rem auto' }}>
-      <h2>{mode === 'signup' ? 'Create your account' : 'Welcome back'}</h2>
-      <p className="muted small">
+    <div className="card mx-auto my-12 max-w-[440px] p-7">
+      <h2 className="font-display text-[1.75rem] font-bold">{mode === 'signup' ? 'Create your account' : 'Welcome back'}</h2>
+      <p className="mb-4 text-sm text-muted">
         {mode === 'signup' ? 'Email + password. No social login needed.' : 'Log in to open your trips.'}
       </p>
-      <form onSubmit={submit} className="stack">
+      <form onSubmit={submit} className="flex flex-col gap-3.5">
         <div className="field">
-          <label>Email</label>
-          <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          <label className="label" htmlFor="email">Email</label>
+          <input id="email" className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
         </div>
         <div className="field">
-          <label>Password</label>
+          <label className="label" htmlFor="pw">Password</label>
           <input
+            id="pw"
             className="input"
             type="password"
             required
@@ -64,19 +65,19 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
           />
         </div>
-        {msg && <div className={`alert ${msg.kind}`}>{msg.text}</div>}
-        <button className="btn primary" disabled={busy} type="submit">
+        {msg && <div className={msg.kind === 'error' ? 'alert-error' : 'alert-ok'}>{msg.text}</div>}
+        <button className="btn-primary py-3" disabled={busy} type="submit">
           {busy ? <span className="spinner" /> : mode === 'signup' ? 'Sign up' : 'Log in'}
         </button>
       </form>
-      <p className="muted small" style={{ marginTop: '1rem', marginBottom: 0 }}>
+      <p className="mt-4 text-sm text-muted">
         {mode === 'signup' ? (
           <>
-            Already have an account? <Link href="/login/">Log in</Link>
+            Already have an account? <Link href="/login/" className="font-bold text-forest">Log in</Link>
           </>
         ) : (
           <>
-            New here? <Link href="/signup/">Create an account</Link>
+            New here? <Link href="/signup/" className="font-bold text-forest">Create an account</Link>
           </>
         )}
       </p>

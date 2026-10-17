@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
+export function Logo({ size = 'md' }: { size?: 'md' | 'lg' }) {
+  return (
+    <Link href="/" className={`flex items-center gap-2.5 font-display font-bold text-ink ${size === 'lg' ? 'text-2xl' : 'text-xl'}`}>
+      <span className="inline-block h-3.5 w-3.5 rounded-full border-[3px] border-clay bg-forest" aria-hidden="true" />
+      GoVibe
+    </Link>
+  );
+}
+
 export default function TopBar() {
   const [user, setUser] = useState<User | null>(null);
 
@@ -16,31 +25,29 @@ export default function TopBar() {
   }, []);
 
   return (
-    <header className="topbar">
-      <div className="topbar-inner">
-        <Link href="/" className="brand">
-          <span className="dot" /> GoVibe
-        </Link>
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/85 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-page items-center gap-4 px-5 py-3">
+        <Logo />
         {user && (
-          <Link href="/trips/" className="btn sm">
-            🧳 My trips
+          <Link href="/trips/" className="btn btn-sm">
+            My trips
           </Link>
         )}
-        <span className="spacer" />
+        <span className="flex-1" />
         {user ? (
           <>
-            <span className="muted small">{user.email}</span>
-            <button className="btn sm" onClick={() => supabase().auth.signOut()}>
+            <span className="hidden text-xs text-muted sm:inline">{user.email}</span>
+            <button className="btn btn-sm" onClick={() => supabase().auth.signOut()}>
               Sign out
             </button>
           </>
         ) : (
           <>
-            <Link href="/login/" className="btn sm">
+            <Link href="/login/" className="px-2 text-sm font-semibold text-ink">
               Log in
             </Link>
-            <Link href="/signup/" className="btn sm primary">
-              Sign up
+            <Link href="/signup/" className="btn-primary btn-sm">
+              Start a trip
             </Link>
           </>
         )}

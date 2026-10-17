@@ -22,7 +22,7 @@ export default function RequireAuth({ children }: { children: (user: User) => Re
     return () => sub.subscription.unsubscribe();
   }, [router]);
 
-  if (user === undefined) return <p className="muted"><span className="spinner" /> Loading…</p>;
-  if (!user) return <div className="alert">Please <a href="login/">log in</a> first.</div>;
+  if (user === undefined) return <p className="text-muted"><span className="spinner" /> Loading…</p>;
+  if (!user) return <div className="alert">Please <a href="login/" className="font-bold text-forest">log in</a> first.</div>;
   return <>{children(user)}</>;
 }

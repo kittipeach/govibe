@@ -8,16 +8,23 @@ import Itinerary from '@/components/Itinerary';
 import AiPanel from '@/components/AiPanel';
 import Bookings from '@/components/Bookings';
 import Budget from '@/components/Budget';
-import { getTrip, listDays, listStops } from '@/lib/db';
+import DayRail from '@/components/DayRail';
+import { getTrip, listDays, listStops, fmtMoney } from '@/lib/db';
 import type { Trip, Day, Stop } from '@/lib/types';
 
 type Tab = 'plan' | 'ai' | 'bookings' | 'budget';
+const TABS: [Tab, string][] = [
+  ['plan', 'Plan & map'],
+  ['ai', 'AI suggest'],
+  ['bookings', 'Bookings'],
+  ['budget', 'Budget'],
+];
 
 export default function TripPage() {
   return (
     <RequireAuth>
       {() => (
-        <Suspense fallback={<p className="muted">Loading…</p>}>
+        <Suspense fallback={<p className="text-muted">Loading…</p>}>
           <TripInner />
         </Suspense>
       )}
@@ -53,9 +60,24 @@ function TripInner() {
     load();
   }, [load]);
 
-  if (!id) return <div className="alert error">No trip id. <Link href="/trips/">Back to trips</Link></div>;
-  if (err) return <div className="alert error">{err}</div>;
-  if (!trip) return <p className="muted"><span className="spinner" /> Loading trip…</p>;
+  useEffect(() => {
+    const h = window.location.hash.replace('#', '') as Tab;
+    if (['plan', 'ai', 'bookings', 'budget'].includes(h)) setTab(h);
+  }, []);
+
+  if (!id)
+    return (
+      <div className="alert-error">
+        No trip id. <Link href="/trips/">Back to trips</Link>
+      </div>
+    );
+  if (err) return <div className="alert-error">{err}</div>;
+  if (!trip)
+    return (
+      <p className="text-muted">
+        <span className="spinner" /> Loading trip…
+      </p>
+    );
 
   const day = days.find((d) => d.id === dayId) ?? null;
   const dayStops = stops.filter((s) => s.day_id === day?.id).sort((a, b) => a.sort - b.sort);
@@ -63,48 +85,40 @@ function TripInner() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: '.8rem' }}>
-        <div>
-          <Link href="/trips/" className="muted small">
+      {/* trip header */}
+      <div className="mb-4 flex flex-wrap items-end gap-4">
+        <div className="min-w-0">
+          <Link href="/trips/" className="text-xs text-muted hover:text-ink">
             ← My trips
           </Link>
-          <h1 style={{ margin: 0 }}>{trip.title}</h1>
-          <p className="muted small" style={{ margin: 0 }}>
-            📍 {trip.destination} · {trip.start_date} → {trip.end_date} · {days.length} days · {stops.length} stops ({pinned} pinned) · {trip.travellers} pax
+          <h1 className="font-display text-3xl font-bold">{trip.title}</h1>
+          <p className="text-xs text-muted">
+            {trip.destination} · {trip.start_date} → {trip.end_date} · {days.length} days · {stops.length} stops ({pinned} pinned) · {trip.travellers} pax
+            {trip.budget_total ? ` · ${fmtMoney(trip.budget_total, trip.currency)} budget` : ''}
           </p>
         </div>
-      </div>
-
-      <div className="tabs">
-        {(
-          [
-            ['plan', '🗺️ Plan & map'],
-            ['ai', '✨ AI suggest'],
-            ['bookings', '🎫 Bookings'],
-            ['budget', '💴 Budget'],
-          ] as [Tab, string][]
-        ).map(([k, label]) => (
-          <button key={k} className={`tab ${tab === k ? 'active' : ''}`} onClick={() => setTab(k)}>
-            {label}
-          </button>
-        ))}
+        <span className="flex-1" />
+        <nav className="tabs" aria-label="Trip sections">
+          {TABS.map(([k, label]) => (
+            <button
+              key={k}
+              className={`tab ${tab === k ? 'tab-active' : ''}`}
+              onClick={() => {
+                setTab(k);
+                history.replaceState(null, '', `#${k}`);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {tab === 'plan' && (
-        <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, .9fr)' }}>
-          <div className="stack" style={{ position: 'sticky', top: 70, alignSelf: 'start' }}>
-            <div className="row">
-              <strong>Map:</strong>
-              <select className="input" style={{ width: 'auto' }} value={dayId ?? ''} onChange={(e) => setDayId(e.target.value)}>
-                {days.map((d, i) => (
-                  <option key={d.id} value={d.id}>
-                    Day {i + 1} · {d.title} · {d.date}
-                  </option>
-                ))}
-              </select>
-              <span className="muted small">{dayStops.filter((s) => s.lat != null).length} pinned stops · press ▶ to play the route</span>
-            </div>
-            <RouteMap day={day} stops={dayStops} allStops={stops} onPickLocation={(loc) => setPendingPin(loc)} />
+        <div className="grid gap-5 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1.05fr)_minmax(360px,.95fr)]">
+          <DayRail days={days} stops={stops} selectedDayId={dayId} onSelectDay={setDayId} />
+          <div className="flex flex-col gap-3 xl:sticky xl:top-[70px] xl:self-start">
+            <RouteMap day={day} stops={dayStops} allStops={stops} onPickLocation={(loc) => setPendingPin(loc)} onDayChange={load} />
           </div>
           <Itinerary trip={trip} days={days} stops={stops} selectedDayId={dayId} onSelectDay={setDayId} onChange={load} pendingPin={pendingPin} clearPendingPin={() => setPendingPin(null)} />
         </div>
@@ -112,17 +126,6 @@ function TripInner() {
       {tab === 'ai' && <AiPanel trip={trip} days={days} stops={stops} selectedDayId={dayId} onChange={load} />}
       {tab === 'bookings' && <Bookings trip={trip} days={days} stops={stops} onChange={load} />}
       {tab === 'budget' && <Budget trip={trip} days={days} stops={stops} onChange={load} />}
-
-      <style jsx global>{`
-        @media (max-width: 900px) {
-          main.container > .grid[style] {
-            grid-template-columns: 1fr !important;
-          }
-          main.container > .grid[style] > .stack[style] {
-            position: static !important;
-          }
-        }
-      `}</style>
     </>
   );
 }

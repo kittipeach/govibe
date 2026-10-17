@@ -4,6 +4,7 @@ import { callFunction } from '@/lib/supabase';
 import { addStops } from '@/lib/db';
 import type { AiSuggestion, Day, Stop, Trip } from '@/lib/types';
 import { KIND_ICON } from '@/lib/types';
+import { SparkIcon } from '@/components/icons';
 
 interface Props {
   trip: Trip;
@@ -65,50 +66,50 @@ export default function AiPanel({ trip, days, stops, selectedDayId, onChange }: 
   const quick = ['Best local food near today\'s stops', 'Scenic viewpoints & photo spots', 'Onsen / relaxing after a long day', 'Shopping & souvenirs', 'Kid-friendly / easy walk', 'Hidden gems locals love'];
 
   return (
-    <div className="stack">
+    <div className="flex flex-col gap-4">
       <div className="card">
-        <h3>
-          ✨ AI recommendations
+        <h3 className="flex items-center gap-2 font-display text-xl font-bold">
+          <SparkIcon size={22} className="text-clay" /> AI recommendations
           <span className="th">ให้ AI แนะนำจุดเที่ยว/ร้านอาหารใกล้แผนของวันนี้ แล้วติ๊กเลือกเพิ่มเข้าแผนได้เลย</span>
         </h3>
-        <p className="muted small">
+        <p className="mt-1 text-sm text-muted">
           Context: <strong>{day ? `${day.title} · ${day.date}` : 'no day selected'}</strong> · {stops.filter((s) => s.day_id === day?.id).length} stops already planned
         </p>
-        <div className="row">
+        <div className="mt-3 flex flex-wrap gap-2">
           {quick.map((q) => (
-            <button key={q} className="btn sm" onClick={() => ask(q)} disabled={busy}>
+            <button key={q} className="btn btn-sm" onClick={() => ask(q)} disabled={busy}>
               {q}
             </button>
           ))}
         </div>
         <form
-          className="row"
-          style={{ marginTop: '.7rem' }}
+          className="mt-3 flex gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             ask();
           }}
         >
-          <input className="input" style={{ flex: 1 }} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g. ramen within 10 min walk of Kawaguchiko station, under ¥1500" />
-          <button className="btn primary" disabled={busy || !prompt.trim()}>
+          <input className="input flex-1 rounded-pill px-4" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g. ramen within 10 min walk of Kawaguchiko station, under ¥1500" />
+          <button className="btn-primary" disabled={busy || !prompt.trim()}>
             {busy ? <span className="spinner" /> : 'Ask'}
           </button>
         </form>
-        {err && <div className="alert error" style={{ marginTop: '.7rem' }}>{err}</div>}
+        {err && <div className="alert-error mt-3">{err}</div>}
       </div>
 
       {results.length > 0 && (
         <div className="card">
-          <div className="row" style={{ marginBottom: '.6rem' }}>
-            <h3 style={{ margin: 0 }}>{results.length} suggestions</h3>
-            <span className="spacer" />
-            <button className="btn primary sm" disabled={picked.size === 0} onClick={addPicked}>
+          <div className="mb-3 flex items-center gap-2">
+            <h3 className="font-display text-lg font-bold">{results.length} suggestions</h3>
+            <span className="flex-1" />
+            <button className="btn-primary btn-sm" disabled={picked.size === 0} onClick={addPicked}>
               Add {picked.size || ''} to {day?.title}
             </button>
           </div>
           {results.map((r, i) => (
-            <label key={i} className="stop" style={{ cursor: 'pointer' }}>
+            <label key={i} className={`stop mb-2 cursor-pointer ${picked.has(i) ? 'border-forest bg-forest-tint/40' : ''}`}>
               <input
+                className="mt-1 h-5 w-5 accent-forest"
                 type="checkbox"
                 checked={picked.has(i)}
                 onChange={(e) => {
@@ -118,15 +119,15 @@ export default function AiPanel({ trip, days, stops, selectedDayId, onChange }: 
                 }}
               />
               <div>
-                <div className="name">
+                <div className="text-[15px] font-bold">
                   {KIND_ICON[r.kind] ?? '📍'} {r.name}
                 </div>
-                <div className="meta">
+                <div className="text-xs text-muted">
                   {r.best_time && <>🕒 {r.best_time} · </>}
                   {r.est_cost != null && <>~{r.est_cost} {trip.currency} · </>}
                   {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
                 </div>
-                <div className="small" style={{ marginTop: '.2rem' }}>
+                <div className="mt-1 text-sm text-ink2">
                   {r.reason}
                   {r.reason_th && <span className="th">{r.reason_th}</span>}
                 </div>

@@ -1,8 +1,10 @@
 'use client';
 import { useState } from 'react';
-import type { Day, Stop, StopKind, TravelMode, Trip } from '@/lib/types';
+import type { Day, Stop, StopKind, Trip } from '@/lib/types';
 import { KIND_ICON } from '@/lib/types';
 import { addStop, updateStop, deleteStop, reorderStops, updateDay, fmtMoney } from '@/lib/db';
+import { fmtDate } from '@/components/DayRail';
+import { PinIcon, TrashIcon, PencilIcon, UpIcon, DownIcon } from '@/components/icons';
 
 interface Props {
   trip: Trip;
@@ -15,11 +17,16 @@ interface Props {
   clearPendingPin: () => void;
 }
 
-export default function Itinerary({ trip, days, stops, selectedDayId, onSelectDay, onChange, pendingPin, clearPendingPin }: Props) {
+/** Itinerary editor for the selected day. */
+export default function Itinerary({ trip, days, stops, selectedDayId, onChange, pendingPin, clearPendingPin }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
+  const day = days.find((d) => d.id === selectedDayId) ?? days[0];
+  if (!day) return <div className="card text-sm text-muted">This trip has no days.</div>;
+  const list = stops.filter((s) => s.day_id === day.id).sort((a, b) => a.sort - b.sort);
+  const dayCost = list.reduce((a, s) => a + (s.cost ?? 0), 0);
+  const di = days.findIndex((d) => d.id === day.id);
 
-  async function move(day: Day, stop: Stop, dir: -1 | 1) {
-    const list = stops.filter((s) => s.day_id === day.id).sort((a, b) => a.sort - b.sort);
+  async function move(stop: Stop, dir: -1 | 1) {
     const i = list.findIndex((s) => s.id === stop.id);
     const j = i + dir;
     if (j < 0 || j >= list.length) return;
@@ -28,173 +35,151 @@ export default function Itinerary({ trip, days, stops, selectedDayId, onSelectDa
     onChange();
   }
 
-  async function addPendingTo(day: Day) {
+  async function addPending(targetDayId: string) {
     if (!pendingPin) return;
-    const n = stops.filter((s) => s.day_id === day.id).length;
-    await addStop({
-      trip_id: trip.id,
-      day_id: day.id,
-      name: pendingPin.name,
-      kind: 'sight',
-      lat: pendingPin.lat,
-      lng: pendingPin.lng,
-      address: pendingPin.address ?? null,
-      place_id: pendingPin.place_id ?? null,
-      sort: n,
-      source: 'manual',
-    });
+    const n = stops.filter((s) => s.day_id === targetDayId).length;
+    await addStop({ trip_id: trip.id, day_id: targetDayId, name: pendingPin.name, kind: 'sight', lat: pendingPin.lat, lng: pendingPin.lng, address: pendingPin.address ?? null, place_id: pendingPin.place_id ?? null, sort: n, source: 'manual' });
     clearPendingPin();
     onChange();
   }
 
   return (
-    <div>
-      {pendingPin && (
-        <div className="alert ok row" style={{ marginBottom: '1rem' }}>
-          <span>
-            📍 <strong>{pendingPin.name}</strong> <span className="muted small">{pendingPin.address}</span>
-          </span>
-          <span className="spacer" />
-          <select
-            className="input"
-            style={{ width: 'auto' }}
-            defaultValue=""
-            onChange={(e) => {
-              const d = days.find((x) => x.id === e.target.value);
-              if (d) addPendingTo(d);
+    <section className="card flex flex-col gap-3.5 p-5">
+      <div className="flex flex-wrap items-baseline gap-2.5">
+        <h2 className="font-display text-2xl font-bold">
+          Day {di + 1} ·{' '}
+          <input
+            className="inline-block w-[12ch] max-w-full border-b border-transparent bg-transparent font-display text-2xl font-bold focus:border-forest focus:outline-none"
+            defaultValue={day.title}
+            key={day.id}
+            aria-label="Day title"
+            onBlur={async (e) => {
+              if (e.target.value !== day.title) {
+                await updateDay(day.id, { title: e.target.value });
+                onChange();
+              }
             }}
-          >
-            <option value="" disabled>
-              Add to day…
-            </option>
-            {days.map((d) => (
+          />
+        </h2>
+        <span className="text-xs text-muted">{fmtDate(day.date)}</span>
+        <span className="flex-1" />
+        <button className="btn-outline btn-sm" onClick={() => setEditing(`new:${day.id}`)}>
+          + Stop
+        </button>
+      </div>
+
+      {pendingPin && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg2 border border-forest-line bg-forest-tint px-3 py-2.5 text-sm">
+          <PinIcon size={18} className="text-forest" />
+          <span className="min-w-0 flex-1 truncate">
+            <strong>{pendingPin.name}</strong> <span className="text-xs text-muted">{pendingPin.address}</span>
+          </span>
+          <button className="btn-primary btn-sm" onClick={() => addPending(day.id)}>
+            Add to Day {di + 1}
+          </button>
+          <select className="input w-auto py-1.5 text-xs" defaultValue="" aria-label="Add to another day" onChange={(e) => e.target.value && addPending(e.target.value)}>
+            <option value="">other day…</option>
+            {days.map((d, i) => (
               <option key={d.id} value={d.id}>
-                {d.title} · {d.date}
+                Day {i + 1} · {d.date}
               </option>
             ))}
           </select>
-          <button className="btn sm" onClick={clearPendingPin}>
+          <button className="icon-btn" onClick={clearPendingPin} aria-label="Dismiss">
             ✕
           </button>
         </div>
       )}
 
-      {days.map((day, di) => {
-        const list = stops.filter((s) => s.day_id === day.id).sort((a, b) => a.sort - b.sort);
-        const dayCost = list.reduce((a, s) => a + (s.cost ?? 0), 0);
-        const active = day.id === selectedDayId;
-        return (
-          <section key={day.id} className="day card" style={active ? { borderColor: 'var(--accent)' } : undefined}>
-            <div className="day-head">
-              <h3>
-                <button className="icon-btn" style={{ fontSize: '1rem', fontWeight: 800, color: active ? 'var(--accent)' : 'inherit' }} onClick={() => onSelectDay(day.id)} title="Show this day on the map">
-                  {active ? '🗺️ ' : ''}Day {di + 1}
-                </button>{' '}
-                <input
-                  className="input"
-                  style={{ display: 'inline-block', width: 'auto', padding: '.2rem .5rem', fontWeight: 600 }}
-                  defaultValue={day.title}
-                  onBlur={async (e) => {
-                    if (e.target.value !== day.title) {
-                      await updateDay(day.id, { title: e.target.value });
+      {list.length === 0 && editing !== `new:${day.id}` && (
+        <p className="rounded-lg2 border border-dashed border-line p-4 text-center text-sm text-muted">
+          No stops yet — search on the map, ask AI, or add one by hand.
+          <span className="th">ยังไม่มีจุด — ค้นหาบนแผนที่ ถาม AI หรือเพิ่มเอง</span>
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {list.map((s, i) =>
+          editing === s.id ? (
+            <StopForm
+              key={s.id}
+              initial={s}
+              tripCurrency={trip.currency}
+              onCancel={() => setEditing(null)}
+              onSave={async (patch) => {
+                await updateStop(s.id, patch);
+                setEditing(null);
+                onChange();
+              }}
+            />
+          ) : (
+            <div key={s.id} className="stop">
+              <div className={`timebox ${s.kind === 'hotel' || s.kind === 'flight' ? 'bg-clay' : ''}`}>
+                <span>{s.start_time ?? KIND_ICON[s.kind]}</span>
+                <span className="mt-0.5 text-sm">{i + 1}</span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 text-[15px] font-bold">
+                  <span className="truncate">{s.name}</span>
+                  {s.source === 'ai' && <span className="badge-ai">AI</span>}
+                  {s.source === 'booking' && <span className="badge-booking">BOOKING</span>}
+                  {s.lat == null && <span className="badge-muted">no pin</span>}
+                </div>
+                <div className="text-xs text-muted">
+                  {s.start_time && s.end_time && <>{s.start_time}–{s.end_time} · </>}
+                  {s.cost != null && <>{fmtMoney(s.cost, trip.currency)} · </>}
+                  {s.address ?? s.kind}
+                </div>
+                {s.note && <div className="mt-1 text-xs text-ink2">{s.note}</div>}
+              </div>
+              <div className="flex items-center">
+                <button className="icon-btn" onClick={() => move(s, -1)} aria-label="Move up" disabled={i === 0}>
+                  <UpIcon size={14} />
+                </button>
+                <button className="icon-btn" onClick={() => move(s, 1)} aria-label="Move down" disabled={i === list.length - 1}>
+                  <DownIcon size={14} />
+                </button>
+                <button className="icon-btn" onClick={() => setEditing(s.id)} aria-label="Edit">
+                  <PencilIcon size={14} />
+                </button>
+                <button
+                  className="icon-btn"
+                  aria-label="Delete"
+                  onClick={async () => {
+                    if (confirm(`Remove “${s.name}”?`)) {
+                      await deleteStop(s.id);
                       onChange();
                     }
                   }}
-                />
-              </h3>
-              <span className="muted small">{fmtDate(day.date)}</span>
-              <select
-                className="input"
-                style={{ width: 'auto', padding: '.2rem .4rem' }}
-                value={day.travel_mode}
-                onChange={async (e) => {
-                  await updateDay(day.id, { travel_mode: e.target.value as TravelMode });
-                  onChange();
-                }}
-                title="Travel mode for route playback"
-              >
-                <option value="DRIVING">🚗 Drive</option>
-                <option value="WALKING">🚶 Walk</option>
-                <option value="TRANSIT">🚆 Transit</option>
-                <option value="BICYCLING">🚲 Bike</option>
-              </select>
-              <span className="spacer" />
-              <span className="small muted">{dayCost ? fmtMoney(dayCost, trip.currency) : ''}</span>
-              <button className="btn sm" onClick={() => setEditing(`new:${day.id}`)}>
-                + Stop
-              </button>
-            </div>
-
-            {list.length === 0 && editing !== `new:${day.id}` && <p className="muted small">No stops yet — search on the map, ask AI, or add manually.</p>}
-
-            {list.map((s, i) => (
-              <div key={s.id}>
-                {editing === s.id ? (
-                  <StopForm
-                    initial={s}
-                    tripCurrency={trip.currency}
-                    onCancel={() => setEditing(null)}
-                    onSave={async (patch) => {
-                      await updateStop(s.id, patch);
-                      setEditing(null);
-                      onChange();
-                    }}
-                  />
-                ) : (
-                  <div className="stop">
-                    <div className="icon">{KIND_ICON[s.kind]}</div>
-                    <div>
-                      <div className="name">
-                        {i + 1}. {s.name}{' '}
-                        {s.source === 'ai' && <span className="badge ai">AI</span>}
-                        {s.source === 'booking' && <span className="badge booking">booking</span>}
-                        {s.lat == null && <span className="badge">no pin</span>}
-                      </div>
-                      <div className="meta">
-                        {s.start_time && <>🕒 {s.start_time}{s.end_time ? `–${s.end_time}` : ''} · </>}
-                        {s.cost != null && <>{fmtMoney(s.cost, trip.currency)} · </>}
-                        {s.address && <span>{s.address}</span>}
-                      </div>
-                      {s.note && <div className="small" style={{ marginTop: '.2rem' }}>{s.note}</div>}
-                    </div>
-                    <div className="row" style={{ gap: '.1rem' }}>
-                      <button className="icon-btn" onClick={() => move(day, s, -1)} title="Move up">▲</button>
-                      <button className="icon-btn" onClick={() => move(day, s, 1)} title="Move down">▼</button>
-                      <button className="icon-btn" onClick={() => setEditing(s.id)} title="Edit">✎</button>
-                      <button
-                        className="icon-btn"
-                        onClick={async () => {
-                          if (confirm(`Remove “${s.name}”?`)) {
-                            await deleteStop(s.id);
-                            onChange();
-                          }
-                        }}
-                        title="Delete"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </div>
-                )}
+                >
+                  <TrashIcon size={14} />
+                </button>
               </div>
-            ))}
+            </div>
+          ),
+        )}
 
-            {editing === `new:${day.id}` && (
-              <StopForm
-                initial={null}
-                tripCurrency={trip.currency}
-                onCancel={() => setEditing(null)}
-                onSave={async (patch) => {
-                  await addStop({ trip_id: trip.id, day_id: day.id, sort: list.length, source: 'manual', kind: 'sight', ...patch });
-                  setEditing(null);
-                  onChange();
-                }}
-              />
-            )}
-          </section>
-        );
-      })}
-    </div>
+        {editing === `new:${day.id}` && (
+          <StopForm
+            initial={null}
+            tripCurrency={trip.currency}
+            onCancel={() => setEditing(null)}
+            onSave={async (patch) => {
+              await addStop({ trip_id: trip.id, day_id: day.id, sort: list.length, source: 'manual', kind: 'sight', ...patch });
+              setEditing(null);
+              onChange();
+            }}
+          />
+        )}
+      </div>
+
+      <div className="mt-auto flex justify-between border-t border-line pt-3 text-xs text-muted">
+        <span>Day cost</span>
+        <strong className="text-ink">
+          {fmtMoney(dayCost, trip.currency)} · {fmtMoney(dayCost * trip.fx_rate, trip.home_currency)}
+        </strong>
+      </div>
+    </section>
   );
 }
 
@@ -211,34 +196,31 @@ function StopForm({ initial, tripCurrency, onSave, onCancel }: { initial: Stop |
   });
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const F = ({ label, k, type = 'text', step, span }: { label: string; k: keyof typeof f; type?: string; step?: string; span?: boolean }) => (
+    <div className={`field ${span ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+      <label className="label" htmlFor={`sf-${k}`}>
+        {label}
+      </label>
+      <input id={`sf-${k}`} className="input" type={type} step={step} required={k === 'name'} value={f[k]} onChange={(e) => set(k, e.target.value)} />
+    </div>
+  );
   return (
     <form
-      className="card stack"
-      style={{ marginBottom: '.5rem' }}
+      className="flex flex-col gap-3 rounded-lg2 border border-forest-line bg-paper p-4"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
-        await onSave({
-          name: f.name,
-          kind: f.kind,
-          start_time: f.start_time || null,
-          end_time: f.end_time || null,
-          cost: f.cost ? Number(f.cost) : null,
-          note: f.note || null,
-          lat: f.lat ? Number(f.lat) : null,
-          lng: f.lng ? Number(f.lng) : null,
-        });
+        await onSave({ name: f.name, kind: f.kind, start_time: f.start_time || null, end_time: f.end_time || null, cost: f.cost ? Number(f.cost) : null, note: f.note || null, lat: f.lat ? Number(f.lat) : null, lng: f.lng ? Number(f.lng) : null });
         setBusy(false);
       }}
     >
       <div className="form-grid">
-        <div className="field" style={{ gridColumn: '1 / -1' }}>
-          <label>Name</label>
-          <input className="input" required value={f.name} onChange={(e) => set('name', e.target.value)} />
-        </div>
+        <F label="Name" k="name" span />
         <div className="field">
-          <label>Type</label>
-          <select className="input" value={f.kind} onChange={(e) => set('kind', e.target.value)}>
+          <label className="label" htmlFor="sf-kind">
+            Type
+          </label>
+          <select id="sf-kind" className="input" value={f.kind} onChange={(e) => set('kind', e.target.value)}>
             {Object.entries(KIND_ICON).map(([k, ic]) => (
               <option key={k} value={k}>
                 {ic} {k}
@@ -246,43 +228,26 @@ function StopForm({ initial, tripCurrency, onSave, onCancel }: { initial: Stop |
             ))}
           </select>
         </div>
-        <div className="field">
-          <label>Start</label>
-          <input className="input" type="time" value={f.start_time} onChange={(e) => set('start_time', e.target.value)} />
-        </div>
-        <div className="field">
-          <label>End</label>
-          <input className="input" type="time" value={f.end_time} onChange={(e) => set('end_time', e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Cost ({tripCurrency})</label>
-          <input className="input" type="number" value={f.cost} onChange={(e) => set('cost', e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Lat</label>
-          <input className="input" type="number" step="any" value={f.lat} onChange={(e) => set('lat', e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Lng</label>
-          <input className="input" type="number" step="any" value={f.lng} onChange={(e) => set('lng', e.target.value)} />
-        </div>
-        <div className="field" style={{ gridColumn: '1 / -1' }}>
-          <label>Note</label>
-          <textarea className="input" value={f.note} onChange={(e) => set('note', e.target.value)} />
+        <F label="Start" k="start_time" type="time" />
+        <F label="End" k="end_time" type="time" />
+        <F label={`Cost (${tripCurrency})`} k="cost" type="number" />
+        <F label="Lat" k="lat" type="number" step="any" />
+        <F label="Lng" k="lng" type="number" step="any" />
+        <div className="field sm:col-span-2 lg:col-span-3">
+          <label className="label" htmlFor="sf-note">
+            Note
+          </label>
+          <textarea id="sf-note" className="input min-h-[70px]" value={f.note} onChange={(e) => set('note', e.target.value)} />
         </div>
       </div>
-      <div className="row">
-        <button className="btn primary sm" disabled={busy}>
+      <div className="flex gap-2">
+        <button className="btn-primary btn-sm" disabled={busy}>
           Save
         </button>
-        <button className="btn sm" type="button" onClick={onCancel}>
+        <button className="btn btn-sm" type="button" onClick={onCancel}>
           Cancel
         </button>
       </div>
     </form>
   );
-}
-
-function fmtDate(d: string) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 }
