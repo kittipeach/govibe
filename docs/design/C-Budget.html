@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Budget — Paper Trail</title>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Noto+Sans+Thai:wght@400;500&display=swap">
+<style>
+body{margin:0}
+body{margin:0;background:#FFFFFF;color:#111111;font-family:Archivo,"Noto Sans Thai",system-ui,sans-serif}
+a{color:#2449FF}a:hover{color:#1631C4}
+</style>
+<div style="width:100%;min-height:980px;box-sizing:border-box;display:flex;flex-direction:column;background:#FFFFFF">
+  <header style="display:flex;align-items:center;gap:18px;padding:14px 32px;border-bottom:2px solid #111111;flex-wrap:wrap">
+    <a href="C-Portal.html" style="text-decoration:none;color:#111111;font-weight:900;font-size:19px;letter-spacing:-.04em;display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#2449FF;display:inline-block"></span>GoVibe</a>
+    <span style="font-size:14px;font-weight:700">Japan winter · Fuji run + Hakuba</span>
+    <div style="flex:1"></div>
+    <nav style="display:flex;gap:0;border:2px solid #111111">
+      <a href="C-Trip.html" style="text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;color:#111111">Plan &amp; map</a>
+      <a href="C-Trip.html" style="text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;color:#111111;border-left:2px solid #111111">AI</a>
+      <a href="C-Trip.html" style="text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;color:#111111;border-left:2px solid #111111">Bookings</a>
+      <a href="C-Budget.html" style="text-decoration:none;font-size:13px;font-weight:700;padding:8px 14px;background:#111111;color:#FFFFFF;border-left:2px solid #111111">Budget</a>
+    </nav>
+  </header>
+
+  <main style="padding:32px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;row-gap:24px;max-width:1216px;width:100%;box-sizing:border-box;margin:0 auto">
+    <div style="grid-column:span 12;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+      <div><h1 style="margin:0;font-size:44px;font-weight:900;letter-spacing:-.05em;line-height:1">Budget</h1><p style="margin:6px 0 0;font-size:13px;color:#777777">1 JPY = 0.23 THB · 2 travellers · planned = stops + bookings + budget lines</p></div>
+      <div style="flex:1"></div>
+      <button type="button" style="font:inherit;font-size:14px;font-weight:700;padding:12px 18px;border:none;background:#2449FF;color:#FFFFFF;cursor:pointer">+ Add expense</button>
+    </div>
+
+    <div style="grid-column:span 3;min-width:0;border-top:2px solid #111111;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#777777">Budget</div><div style="font-size:36px;font-weight:900;letter-spacing:-.04em;margin-top:6px">¥647,000</div><div style="font-size:13px;color:#777777">฿148,810</div></div>
+    <div style="grid-column:span 3;min-width:0;border-top:2px solid #111111;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#777777">Planned</div><div style="font-size:36px;font-weight:900;letter-spacing:-.04em;margin-top:6px">¥602,400</div><div style="font-size:13px;color:#777777">฿138,550 · 93%</div></div>
+    <div style="grid-column:span 3;min-width:0;border-top:2px solid #111111;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#777777">Spent so far</div><div style="font-size:36px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:#2449FF">¥232,700</div><div style="font-size:13px;color:#777777">฿53,520 · flights paid</div></div>
+    <div style="grid-column:span 3;min-width:0;border-top:2px solid #2449FF;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2449FF">Per person</div><div style="font-size:36px;font-weight:900;letter-spacing:-.04em;margin-top:6px">฿69,275</div><div style="font-size:13px;color:#777777">under the ฿100,000 cap</div></div>
+
+    <div style="grid-column:span 12;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#777777"><span>Planned vs budget</span><span>¥44,600 headroom</span></div>
+      <div style="height:16px;background:#E4E6EB;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:36%;background:#111111"></div><div style="position:absolute;left:36%;top:0;height:100%;width:57%;background:#2449FF"></div></div>
+      <div style="display:flex;gap:18px;font-size:12px;color:#777777"><span><span style="display:inline-block;width:10px;height:10px;background:#111111;vertical-align:middle;margin-right:6px"></span>Spent</span><span><span style="display:inline-block;width:10px;height:10px;background:#2449FF;vertical-align:middle;margin-right:6px"></span>Still planned</span><span><span style="display:inline-block;width:10px;height:10px;background:#E4E6EB;vertical-align:middle;margin-right:6px"></span>Headroom</span></div>
+    </div>
+
+    <div style="grid-column:span 5;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <h2 style="margin:0;font-size:18px;font-weight:900;letter-spacing:-.03em;border-bottom:2px solid #111111;padding-bottom:8px">By category</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 84px;gap:12px;align-items:center"><span>Flights</span><div style="height:10px;background:#E4E6EB;position:relative"><div style="position:absolute;left:0;top:0;height:100%;width:38%;background:#111111"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums">¥232,700</span></div>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 84px;gap:12px;align-items:center"><span>Lodging</span><div style="height:10px;background:#E4E6EB;position:relative"><div style="position:absolute;left:0;top:0;height:100%;width:30%;background:#2449FF"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums">¥181,000</span></div>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 84px;gap:12px;align-items:center"><span>Transport</span><div style="height:10px;background:#E4E6EB;position:relative"><div style="position:absolute;left:0;top:0;height:100%;width:12%;background:#2449FF"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums">¥72,000</span></div>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 84px;gap:12px;align-items:center"><span>Food</span><div style="height:10px;background:#E4E6EB;position:relative"><div style="position:absolute;left:0;top:0;height:100%;width:11%;background:#2449FF"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums">¥66,000</span></div>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 84px;gap:12px;align-items:center"><span>Activities</span><div style="height:10px;background:#E4E6EB;position:relative"><div style="position:absolute;left:0;top:0;height:100%;width:6%;background:#2449FF"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums">¥36,700</span></div>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 84px;gap:12px;align-items:center"><span>Shopping</span><div style="height:10px;background:#E4E6EB;position:relative"><div style="position:absolute;left:0;top:0;height:100%;width:2%;background:#2449FF"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums">¥14,000</span></div>
+      </div>
+    </div>
+
+    <div style="grid-column:span 7;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid #111111;padding-bottom:8px"><h2 style="margin:0;font-size:18px;font-weight:900;letter-spacing:-.03em">Entries</h2><span style="font-size:12px;color:#777777">5 of 31</span></div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:380px">
+        <thead><tr style="text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#777777"><th style="padding:6px 4px;font-weight:700">Item</th><th style="padding:6px 4px;font-weight:700">Day</th><th style="padding:6px 4px;font-weight:700;text-align:right">JPY</th><th style="padding:6px 4px;font-weight:700;text-align:right">THB</th></tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid #C9CDD6"><td style="padding:10px 4px"><strong>TG642/643 BKK–NRT ×2</strong><div style="font-size:11px;color:#111111;font-weight:700">paid · flights</div></td><td style="padding:10px 4px;color:#777777">—</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">232,700</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">53,530</td></tr>
+          <tr style="border-top:1px solid #C9CDD6"><td style="padding:10px 4px"><strong>GranJam Tsugaike · 3 nights</strong><div style="font-size:11px;color:#2449FF;font-weight:700">planned · from booking PDF</div></td><td style="padding:10px 4px;color:#777777">4–6</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">84,000</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">19,320</td></tr>
+          <tr style="border-top:1px solid #C9CDD6"><td style="padding:10px 4px"><strong>Evergreen private lesson</strong><div style="font-size:11px;color:#2449FF;font-weight:700">planned · activity</div></td><td style="padding:10px 4px;color:#777777">5</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">32,000</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">7,360</td></tr>
+          <tr style="border-top:1px solid #C9CDD6"><td style="padding:10px 4px"><strong>Rental car 13–18 Dec</strong><div style="font-size:11px;color:#2449FF;font-weight:700">planned · transport</div></td><td style="padding:10px 4px;color:#777777">4–9</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">48,000</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">11,040</td></tr>
+          <tr style="border-top:1px solid #C9CDD6;border-bottom:2px solid #111111"><td style="padding:10px 4px"><strong>Hoto Fudo lunch</strong><div style="font-size:11px;color:#2449FF;font-weight:700">planned · food · stop</div></td><td style="padding:10px 4px;color:#777777">3</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">3,600</td><td style="padding:10px 4px;text-align:right;font-variant-numeric:tabular-nums">830</td></tr>
+        </tbody></table></div>
+      <a href="C-Budget.html" style="font-size:13px;font-weight:700;text-decoration:none;align-self:flex-start">All 31 entries →</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

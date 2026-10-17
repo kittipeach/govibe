@@ -45,6 +45,11 @@ npm run dev                      # http://localhost:3000
 2. Repo → **Settings → Pages → Source: GitHub Actions**.
 3. Push to `main` — `.github/workflows/deploy-pages.yml` builds with `GITHUB_PAGES=true` (sets `basePath=/govibe`) and publishes `out/`.
 
+## Docs
+
+- `docs/SPEC.md` — full product & technical spec
+- `docs/design/` — UI mock-ups (A · Trailhead implemented, B/C kept for reference)
+
 ## Features map
 
 | Area | Where |
